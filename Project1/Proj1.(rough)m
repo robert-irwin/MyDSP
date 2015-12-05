@@ -1,0 +1,52 @@
+%% Lets try interpolation
+
+% Before we can interpolate, we need to define the query points...
+
+% define a sampling frequency
+fs = 50;
+
+t_interpol = t_resamp(1):1/fs:t_resamp(length(t_resamp));
+Vq = interp1(t_resamp,y,t_interpol, 'spline');
+
+L = length(Vq);
+% define a frequency vector
+NFFT = 2^nextpow2(L);
+[four_Vq, f] = myFFT(Vq, fs, NFFT); %compute fourier transform
+
+
+figure(1); clf;
+%plot(f,2*abs(four_Vq(1:NFFT/2+1)));
+plot(f, 2*abs(four_Vq))
+title('FFT of Variable Sampled Signal')
+xlabel('frequency (Hz)');
+ylabel('Magnitude')
+xlim([0 30])
+
+% define the window width...
+
+winsec = .4;
+winsam = floor(winsec*fs);
+
+winsec2 = .4;
+winsam2 = floor(winsec*fs);
+
+
+%define overlap ...
+overlap = winsec/1.1;
+overlap = floor(overlap*fs);
+
+overlap2 = winsec/1.1;
+overlap2 = floor(overlap2*fs);
+% define the window...
+win = window(@rectwin,winsam);
+win2 = window(@hamming,winsam2);
+
+f = 0:.001:30;
+figure(2);clf;
+spectrogram(Vq, win, overlap, f,fs)
+title('Rectangular Window')
+
+figure(3);clf;
+spectrogram(Vq, win2, overlap2, f, fs)
+title('Hamming Window')
+ 
