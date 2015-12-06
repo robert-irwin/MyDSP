@@ -1,9 +1,30 @@
 clear;clc;
+
+%generate classifier
+Male1 = .9903;
+Male2 = 1.2762e3;
+Female1 = 17.6844;
+Female2 = 2.6318e3;
+%create a normal distribution from the mean and variance
+ymclass = sqrt( Male2 ) .* randn(1000,1) + Male1;
+yfclass = sqrt( Female2 ) .* randn(1000,1) + Female1;
+
+ymclass = sort(ymclass,'ascend');
+yfclass = sort(yfclass,'ascend');
+
+normm = fitdist(ymclass,'Normal');
+normf = fitdist(yfclass,'Normal');
+
+classm = pdf(normm,ymclass);
+classf = pdf(normf,yfclass);
+
+
 %read in speech signals
 %
+count = 1;
 [y, Fs] = audioread('bush.mp3');
-file = audioplayer(y,Fs);
-file.play
+% file = audioplayer(y,Fs);
+% file.play
 %remove second column
 %all zeros, from mono recording possibly, reading stereo?
 %
@@ -58,7 +79,7 @@ while in_range
     f = Fs/2*linspace(0,1,NFFT/2+1); % Create f vector
     [max_amp, max_index] = max(FTM);
     F0_win(win_num) = f(max_index);
-    [peaks, locs] = findpeaks(FTM,f, 'MinPeakHeight', max_amp*.5);
+    [peaks, locs] = findpeaks(FTM,f, 'MinPeakHeight', max_amp*.4);
     all_locs = [all_locs locs];
     win_num = win_num + 1;
     
@@ -84,19 +105,59 @@ while in_range
     %
     closest_value = peaks(idx);
     closest_loc = locs(idx);
+    
+    %make a decision once a second
+    if ((win_num == round(1/window_duration)) || (in_range == 0))
+        F0(count) = mean(F0_win);
+        var_F0(count) = var(F0_win);
+        var_all_locs(count) = var(all_locs(2:length(all_locs)));
+        mean_all_locs(count)= mean(all_locs(2:length(all_locs)));
+        
+        %get estimator mean and variance
+        VAR = abs(var_all_locs(count) - var_F0(count));
+        MEAN = mean_all_locs(count) - F0(count);
+        
+        yest = sqrt( VAR ) .* randn(1000,1) + MEAN;
+        yest = sort(yest,'ascend');
+        normest = fitdist(yest,'Normal');
+        est = pdf(normest,yest);
+        male = xcorr(classm,yest);
+        female = xcorr(classf,yest);
+        male = male./sum(male);
+        female = female./sum(female);
+        maxm = max(male);
+        maxf = max(female);
+        
+        fprintf('Decision at %ds\n',winsam(2)/Fs);
+        %classify based off the higher correlation
+        if maxm > maxf
+            fprintf('Male: Conf = %d\n\n', maxm*100);
+        else
+            fprintf('Female: Conf = %d\n\n', maxf*100);
+        end
+        %get classifiers
+%         VAR(count) = var_all_locs(count) - var_F0(count);
+%         MEAN(count) = mean_all_locs(count)-F0(count);
+%         fprintf('Decision at %ds\n',winsam(2)/Fs);
+%         if mean_all_locs(count) < F0(count)
+%             fprintf('Male\n\n')
+%             
+%         elseif (var_all_locs(count)-var_F0(count)) < 800
+%             fprintf('Male\n\n')
+%             
+%         elseif (mean_all_locs(count)-F0(count)) < 5
+%             fprintf('Male\n\n')
+%             
+%         else
+%             fprintf('Female\n\n')
+%             
+%         end
+%         %reset counters and variables
+        win_num = 1;
+        all_locs = -1;
+        F0_win = 0;
+        count = count+1;
+    end
 end
-
-F0 = mean(F0_win)
-var_F0 = var(F0_win)
-var_all_locs = var(all_locs(2:length(all_locs)))
-mean_all_locs= mean(all_locs(2:length(all_locs)))
-
-if mean_all_locs < F0
-    disp('Male')
-elseif (var_all_locs-var_F0) < 800
-    disp('Male')
-elseif (mean_all_locs-F0) < 5
-    disp('Male')
-else
-    disp('Female')
-end
+% mean(VAR)
+% mean(MEAN)
