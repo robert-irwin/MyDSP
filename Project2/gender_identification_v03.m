@@ -115,6 +115,7 @@ while in_range
         VAR = abs(var_all_locs(count) - var_F0(count));
         MEAN = mean_all_locs(count) - F0(count);
         
+        %begin making decision
         if MEAN >= mid1
             if MEAN <= FEMALE(1)
                 ymean = m1*(MEAN-mid1);
@@ -144,6 +145,7 @@ while in_range
         end
         
         fprintf('Decision at %.4fs\n',winsam(2)/Fs);
+       
         %make decision
         dec = ymean+yvar;
         if dec > 0
@@ -154,23 +156,7 @@ while in_range
             fprintf('Male: %.4f percent confident\n\n', .001');
         end
            
-        %get classifiers
-%         VAR(count) = var_all_locs(count) - var_F0(count);
-%         MEAN(count) = mean_all_locs(count)-F0(count);
-%         fprintf('Decision at %ds\n',winsam(2)/Fs);
-%         if mean_all_locs(count) < F0(count)
-%             fprintf('Male\n\n')
-%             
-%         elseif (var_all_locs(count)-var_F0(count)) < 800
-%             fprintf('Male\n\n')
-%             
-%         elseif (mean_all_locs(count)-F0(count)) < 5
-%             fprintf('Male\n\n')
-%             
-%         else
-%             fprintf('Female\n\n')
-%             
-%         end
+        
 %         %reset counters and variables
         win_num = 1;
         all_locs = -1;
@@ -178,5 +164,3 @@ while in_range
         count = count+1;
     end
 end
-% mean(VAR)
-% mean(MEAN)
