@@ -34,3 +34,22 @@ figure(1)
 plot(ym,distm)
 figure(2)
 plot(yf,distf)
+
+%generate a line for classification
+%change in x
+dx1 = Female1-Male1;
+dx2 = Female2-Male2;
+
+mid1 = (Female1+Male1)/2;
+mid2 = (Female2+Male2)/2;
+%we want the range to be 100 [-50 50]
+m1 = 100/dx1;
+m2 = 100/dx2;
+x1 = linspace(Male1,Female1, 1000);
+x2 = linspace(Male2,Female2, 10000);
+y1 = m1.*(x1-mid1);
+y2 = m2.*(x2-mid2);
+figure(2)
+plot(x1,y1)
+figure(3)
+plot(x2,y2)

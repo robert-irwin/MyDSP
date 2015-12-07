@@ -1,28 +1,26 @@
 clear;clc;
 
 %generate classifier
-Male1 = .9903;
-Male2 = 1.2762e3;
-Female1 = 17.6844;
-Female2 = 2.6318e3;
-%create a normal distribution from the mean and variance
-ymclass = sqrt( Male2 ) .* randn(1000,1) + Male1;
-yfclass = sqrt( Female2 ) .* randn(1000,1) + Female1;
+MALE = [.9903 1.2762e3];
+FEMALE = [17.6844 2.6318e3];
 
-ymclass = sort(ymclass,'ascend');
-yfclass = sort(yfclass,'ascend');
+%generate a line for classification
+%change in x
+dx1 = FEMALE(1)-MALE(1);
+dx2 = FEMALE(2)-MALE(2);
 
-normm = fitdist(ymclass,'Normal');
-normf = fitdist(yfclass,'Normal');
+mid1 = (FEMALE(1)+MALE(1))/2;
+mid2 = (FEMALE(2)+MALE(2))/2;
 
-classm = pdf(normm,ymclass);
-classf = pdf(normf,yfclass);
+%we want the range to be 100 [-50 50]
+m1 = 100/dx1;
+m2 = 100/dx2;
 
 
 %read in speech signals
 %
 count = 1;
-[y, Fs] = audioread('bush.mp3');
+[y, Fs] = audioread('steinem.mp3');
 % file = audioplayer(y,Fs);
 % file.play
 %remove second column
@@ -117,24 +115,45 @@ while in_range
         VAR = abs(var_all_locs(count) - var_F0(count));
         MEAN = mean_all_locs(count) - F0(count);
         
-        yest = sqrt( VAR ) .* randn(1000,1) + MEAN;
-        yest = sort(yest,'ascend');
-        normest = fitdist(yest,'Normal');
-        est = pdf(normest,yest);
-        male = xcorr(classm,yest);
-        female = xcorr(classf,yest);
-        male = male./sum(male);
-        female = female./sum(female);
-        maxm = max(male);
-        maxf = max(female);
-        
-        fprintf('Decision at %ds\n',winsam(2)/Fs);
-        %classify based off the higher correlation
-        if maxm > maxf
-            fprintf('Male: Conf = %d\n\n', maxm*100);
+        if MEAN >= mid1
+            if MEAN <= FEMALE(1)
+                ymean = m1*(MEAN-mid1);
+            else
+                ymean = 50;
+            end
         else
-            fprintf('Female: Conf = %d\n\n', maxf*100);
+            if MEAN >= MALE(1)
+                ymean = m1*(MEAN-mid1);
+            else
+                ymean = -50;
+            end
         end
+        
+        if VAR >= mid2
+            if VAR <= FEMALE(2)
+                yvar = m2*(VAR-mid2);
+            else
+                yvar = 50;
+            end
+        else
+            if VAR >= MALE(2)
+                yvar = m2*(VAR-mid2);
+            else
+                yvar = -50;
+            end
+        end
+        
+        fprintf('Decision at %.4fs\n',winsam(2)/Fs);
+        %make decision
+        dec = ymean+yvar;
+        if dec > 0
+            fprintf('Female: %.4f percent confident\n\n', dec);
+        elseif dec < 0
+            fprintf('Male: %.4f percent confident\n\n', abs(dec));
+        else
+            fprintf('Male: %.4f percent confident\n\n', .001');
+        end
+           
         %get classifiers
 %         VAR(count) = var_all_locs(count) - var_F0(count);
 %         MEAN(count) = mean_all_locs(count)-F0(count);
