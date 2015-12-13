@@ -1,9 +1,11 @@
 clear;clc;
 
 %generate classifier
-MALE = [.9903 1.2762e3];
-FEMALE = [17.6844 2.6318e3];
+%MALE = [.9903 1.2762e3];
+%FEMALE = [17.6844 2.6318e3];
 
+MALE = [-2.4907 1.28e3];  
+FEMALE = [11.54 1.963e3];
 %generate a line for classification
 %change in x
 dx1 = FEMALE(1)-MALE(1);
@@ -20,9 +22,9 @@ m2 = 100/dx2;
 %read in speech signals
 %
 count = 1;
-[y, Fs] = audioread('steinem.mp3');
-% file = audioplayer(y,Fs);
-% file.play
+[y, Fs] = audioread('Male 1.wav');
+file = audioplayer(y,Fs);
+file.play
 %remove second column
 %all zeros, from mono recording possibly, reading stereo?
 %
@@ -79,30 +81,12 @@ while in_range
     F0_win(win_num) = f(max_index);
     [peaks, locs] = findpeaks(FTM,f, 'MinPeakHeight', max_amp*.4);
     all_locs = [all_locs locs];
-    win_num = win_num + 1;
+    %win_num = win_num + 1;
     
     %move the window for the next iteration
     win_edge = winsam(2)-overlap;
     
-    %pdf 
-    %
-    total_peak_energy = sum(peaks);
-    normalized_peaks = peaks./total_peak_energy;
-    mean_normalized_peaks = mean(normalized_peaks);
     
-    %find what normalized_peaks value is closest to mean_normalized_peaks
-    %
-    tmp = abs(mean_normalized_peaks - normalized_peaks); %subtract peaks
-    
-    %the minimum would then indicate the closest value
-    %grab that index
-    %
-    [~, idx] = min(tmp); 
-    
-    %use the index to get peak and location
-    %
-    closest_value = peaks(idx);
-    closest_loc = locs(idx);
     
     %make a decision once a second
     if ((win_num == round(1/window_duration)) || (in_range == 0))
@@ -162,5 +146,7 @@ while in_range
         all_locs = -1;
         F0_win = 0;
         count = count+1;
+        continue
     end
+    win_num = win_num+1;
 end

@@ -16,40 +16,39 @@ Male2 = mean(VARm);
 Female1 = mean(MEANf);
 Female2 = mean(VARf);
 
-%create a normal distribution from the mean and variance
-ym = sqrt( Male2 ) .* randn(1000,1) + Male1;
-yf = sqrt( Female2 ) .* randn(1000,1) + Female1;
-
-ym = sort(ym,'ascend');
-yf = sort(yf,'ascend');
-
-normm = fitdist(ym,'Normal');
-normf = fitdist(yf,'Normal');
-
-distm = pdf(normm,ym);
-distf = pdf(normf,yf);
-
-
-figure(1)
-plot(ym,distm)
-figure(2)
-plot(yf,distf)
 
 %generate a line for classification
 %change in x
 dx1 = Female1-Male1;
 dx2 = Female2-Male2;
 
+%find the midpoints
 mid1 = (Female1+Male1)/2;
 mid2 = (Female2+Male2)/2;
+
 %we want the range to be 100 [-50 50]
 m1 = 100/dx1;
 m2 = 100/dx2;
-x1 = linspace(Male1,Female1, 1000);
-x2 = linspace(Male2,Female2, 10000);
-y1 = m1.*(x1-mid1);
+x1 = linspace(Male1-5,Female1+5, 1000);
+x2 = linspace(Male2-5e3,Female2+5e3, 10000);
+for i = 1:length(x1)
+    if ((x1(i)>=Male1)&&(x1(i)<=Female1))
+        y1(i) = m1.*(x1(i)-mid1);
+    elseif x1(i)<Male1
+        y1(i) = -50;
+    else
+        y1(i) = 50;
+    end
+end
+    
+    
 y2 = m2.*(x2-mid2);
+
 figure(2)
 plot(x1,y1)
+ylim([-55 55])
+title('Concentration Classifier')
+ylabel('Confidence Level Male/Female (%)')
+xlabel('Difference of Means')
 figure(3)
 plot(x2,y2)
